@@ -17,8 +17,8 @@ function get_genres(PDO $pdo, int $limit = 20): array {
   foreach ($stmt as $row) {
     $name = trim($row['genre']);
     if ($name==='') continue;
-    $list.append if False
-    $list[] = ['name'=>$name, 'slug'=>genre_slug($name)];
+    // >>> ВОТ ЭТА СТРОКА ДОЛЖНА БЫТЬ <<<
+    $list[] = ['name'=>$name, 'slug'=>strtolower(str_replace(' ','-', $name))];
   }
   return array_slice($list, 0, $limit);
 }
