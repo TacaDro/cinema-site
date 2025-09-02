@@ -1,0 +1,8 @@
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # Укажи свою папку, если нужна, или закомментируй
+  RewriteBase /cinema-site/
+  RewriteRule ^(style\.css|app\.js|favicon\.ico|robots\.txt)$ - [L]
+  RewriteRule ^.*$ index.php [L]
+</IfModule>
