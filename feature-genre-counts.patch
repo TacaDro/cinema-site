@@ -1,0 +1,107 @@
+diff --git a/index.php b/index.php
+--- a/index.php
++++ b/index.php
+@@ -1,12 +1,34 @@
+ <?php
+ require __DIR__.'/db.php';
+ require __DIR__.'/csrf.php';
+ $config = require __DIR__.'/config.php';
+ 
+ $base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
+ if ($base==='.'||$base==='/') $base='';
+ 
++// Полифилл для PHP < 8
++if (!function_exists('str_starts_with')) {
++  function str_starts_with($haystack, $needle){ return strpos($haystack, $needle) === 0; }
++}
++
+ function h($s){return htmlspecialchars((string)$s,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');}
+ function slug($s){$s=iconv('UTF-8','ASCII//TRANSLIT',$s);$s=preg_replace('~[^a-z0-9]+~i','-',$s);return trim(strtolower($s),'-')?:'item';}
++function genre_slug($g){ return strtolower(str_replace(' ','-',trim($g))); }
++
++/**
++ * Жанры со счётчиками фильмов.
++ */
++function get_genres_with_counts(PDO $pdo, int $limit = 30): array {
++  $sql = "SELECT genre, COUNT(*) AS cnt
++          FROM movies
++          WHERE genre <> ''
++          GROUP BY genre
++          ORDER BY genre ASC";
++  $rows = $pdo->query($sql)->fetchAll();
++  $out = [];
++  foreach ($rows as $r) {
++    $name = trim($r['genre']);
++    if ($name==='') continue;
++    $out[] = ['name'=>$name, 'slug'=>genre_slug($name), 'count'=>(int)$r['cnt']];
++  }
++  return array_slice($out, 0, $limit);
++}
+ 
+-function url_movie($id,$title){global $base;return "$base/film/$id-".slug($title);} 
+-function render($view,$data=[]){extract($data,EXTR_SKIP);include __DIR__.'/views/_layout.php';}
++function url_movie($id,$title){global $base;return "$base/film/$id-".slug($title);}
++function render($view,$data=[]){
++  extract($data,EXTR_SKIP);
++  global $pdo;
++  $genres = get_genres_with_counts($pdo);
++  include __DIR__.'/views/_layout.php';
++}
+ function require_admin(){if(empty($_SESSION['is_admin'])){global $base;header('Location: '.($base?:'').'/admin/login');exit;}}
+ 
+ $uri=parse_url($_SERVER['REQUEST_URI'],PHP_URL_PATH);
+diff --git a/views/_layout.php b/views/_layout.php
+--- a/views/_layout.php
++++ b/views/_layout.php
+@@ -1,14 +1,31 @@
+ <?php /* Базовый шаблон */ ?>
+ <!doctype html>
+ <html lang="ru">
+ <head>
+   <meta charset="utf-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1" />
+   <title><?= isset($movie) ? h($movie['title']).' — Фильмы' : 'Фильмы' ?></title>
+-  <link rel="stylesheet" href="<?= $base ?>/style.css" />
++  <link rel="stylesheet" href="<?= $base ?>/style.css?v=4" />
+ </head>
+ <body>
+ <header class="container">
+   <h1><a href="<?= $base ?>/">Фильмы</a></h1>
+   <form class="search" action="<?= $base ?>/poisk" method="get">
+     <input type="text" name="q" placeholder="Название" value="<?= h($q ?? '') ?>" />
+     <button>Найти</button>
+   </form>
+ </header>
++
++<?php $active = $active_genre_slug ?? null; ?>
++<?php if (!empty($genres)): ?>
++  <nav class="genres-nav container">
++    <ul>
++      <?php foreach ($genres as $g):
++        $isActive = ($active && $g['slug'] === $active);
++      ?>
++        <li>
++          <a href="<?= $base ?>/genre/<?= h($g['slug']) ?>" class="<?= $isActive ? 'active' : '' ?>">
++            <?= h($g['name']) ?>
++            <span class="count">(<?= (int)($g['count'] ?? 0) ?>)</span>
++          </a>
++        </li>
++      <?php endforeach; ?>
++    </ul>
++  </nav>
++<?php endif; ?>
+ 
+ <main class="container">
+   <?php include __DIR__ . '/' . $view . '.php'; ?>
+diff --git a/style.css b/style.css
+--- a/style.css
++++ b/style.css
+@@ -20,3 +20,11 @@
+ input[type=number],input[type=url],textarea{width:100%;padding:10px;border:1px solid #334;border-radius:8px;background:#11161d;color:#e6edf3}
+ 
++.genres-nav{border-bottom:1px solid #223}
++.genres-nav ul{list-style:none;margin:0;padding:8px 0;display:flex;flex-wrap:wrap;gap:8px}
++.genres-nav li a{display:inline-block;padding:6px 10px;border:1px solid #223;border-radius:999px;background:#0e141b}
++.genres-nav li a:hover{filter:brightness(1.1)}
++.genres-nav li a.active{background:#1f6feb;color:#fff;border-color:#1f6feb}
++.genres-nav li a .count{opacity:.85;margin-left:6px;font-variant-numeric:tabular-nums}
