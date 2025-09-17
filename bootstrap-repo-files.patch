@@ -1,0 +1,6 @@
+git apply --check bootstrap-repo-files.patch   # проверка
+git apply bootstrap-repo-files.patch           # применение
+git status                                     # увидишь новые файлы
+git add .
+git commit -m "Add .gitignore and README with workflow"
+git push -u origin main
