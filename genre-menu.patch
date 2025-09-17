@@ -1,0 +1,6 @@
+git apply --check genre-menu-demo.patch   # сначала проверка
+git apply genre-menu-demo.patch           # затем применение
+git status                                # увидишь изменения
+git add .
+git commit -m "Проверка: применён демо-патч"
+git push origin master
