@@ -25,3 +25,10 @@ input[type=number],input[type=url],textarea{width:100%;padding:10px;border:1px s
 .genres-nav ul{list-style:none;margin:0;padding:8px 0;display:flex;flex-wrap:wrap;gap:8px}
 .genres-nav li a{display:inline-block;padding:6px 10px;border:1px solid #223;border-radius:999px;background:#0e141b}
 .genres-nav li a:hover{filter:brightness(1.1)}
+/* Меню жанров + счётчик */
+.genres-nav{border-bottom:1px solid #223}
+.genres-nav ul{list-style:none;margin:0;padding:8px 0;display:flex;flex-wrap:wrap;gap:8px}
+.genres-nav li a{display:inline-block;padding:6px 10px;border:1px solid #223;border-radius:999px;background:#0e141b}
+.genres-nav li a:hover{filter:brightness(1.1)}
+.genres-nav li a.active{background:#1f6feb;color:#fff;border-color:#1f6feb}
+.genres-nav li a .count{opacity:.85;margin-left:6px;font-variant-numeric:tabular-nums}
